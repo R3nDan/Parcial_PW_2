@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración · Consultas médicas</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Consultas médicas</a>
+  <nav><a class="active" href="/admin">Administración</a><a href="/swagger-ui.html">API Swagger</a></nav>
+  <form th:action="@{/logout}" method="post"><button class="button ghost">Cerrar sesión</button></form>
+</header>
+<main class="container">
+  <div class="heading">
+    <div><p class="eyebrow">PANEL ADMINISTRATIVO</p><h1>Administración</h1><p class="muted">Médicos, accesos y consultas.</p></div>
+    <span class="role-pill">ADMINISTRADOR</span>
+  </div>
+  <div class="alert success" th:if="${mensaje}" th:text="${mensaje}"></div>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+
+  <div class="grid two">
+    <section class="card">
+      <div class="card-title"><h2>Registrar médico y acceso</h2></div>
+      <form th:action="@{/admin/medicos}" th:object="${medico}" method="post" class="form-grid">
+        <label>Nombre completo<input th:field="*{nombre}" maxlength="80" required></label>
+        <label>Especialidad<input th:field="*{especialidad}" maxlength="80" required></label>
+        <label>Usuario para iniciar sesión<input th:field="*{usuario}" minlength="3" maxlength="40" required></label>
+        <label>Contraseña inicial<input th:field="*{clave}" type="password" minlength="6" maxlength="100" required></label>
+        <div class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+        <div class="field-error" th:if="${#fields.hasErrors('especialidad')}" th:errors="*{especialidad}"></div>
+        <div class="field-error" th:if="${#fields.hasErrors('usuario')}" th:errors="*{usuario}"></div>
+        <div class="field-error" th:if="${#fields.hasErrors('clave')}" th:errors="*{clave}"></div>
+        <button class="button primary" type="submit">Crear médico</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-title"><h2>Crear acceso de paciente</h2></div>
+      <p>Usa como usuario el mismo nombre que escribirás al asignarle una consulta.</p>
+      <form th:action="@{/admin/pacientes}" method="post" class="form-grid">
+        <label>Nombre de usuario<input name="usuario" maxlength="40" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9 .'-]+" required></label>
+        <label>Contraseña inicial<input name="clave" type="password" minlength="6" maxlength="100" required></label>
+        <button class="button primary" type="submit">Crear acceso</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-title"><h2>Asignar consulta</h2></div>
+      <form th:action="@{/admin/consultas}" th:object="${consulta}" method="post" class="form-grid">
+        <label>Nombre del paciente<input th:field="*{pacienteNombre}" maxlength="40" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9 .'-]+" required></label>
+        <label>Motivo<input th:field="*{motivo}" maxlength="100" required></label>
+        <label>Consultorio<input th:field="*{consultorio}" type="number" min="101" max="999" placeholder="101" required></label>
+        <label>Médico<select name="medicoId" required><option value="">Selecciona un médico</option><option th:each="m : ${medicos}" th:value="${m.id}" th:text="|${m.nombre} · ${m.especialidad}|"></option></select></label>
+        <label>Inicio<input th:field="*{inicio}" type="datetime-local" required></label>
+        <label>Fin<input th:field="*{fin}" type="datetime-local" required></label>
+        <div class="field-error" th:if="${#fields.hasErrors('consultorio')}" th:errors="*{consultorio}"></div>
+        <div class="field-error" th:if="${#fields.hasErrors('fin')}" th:errors="*{fin}"></div>
+        <button class="button primary" type="submit">Asignar consulta</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-title"><h2>Médicos registrados</h2><span class="count" th:text="${#lists.size(medicos)} + ' médicos'"></span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Médico</th><th>Especialidad</th><th>Usuario</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr th:each="m : ${medicos}">
+            <td th:text="${m.nombre}"></td><td th:text="${m.especialidad}"></td><td th:text="${m.usuario}"></td>
+            <td><div class="row-actions"><a class="button ghost small-button" th:href="@{/admin/medicos/{id}/editar(id=${m.id})}">Editar</a>
+              <form th:action="@{/admin/medicos/{id}/eliminar(id=${m.id})}" method="post"><button class="button danger small-button" type="submit">Eliminar</button></form></div></td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(medicos)}"><td colspan="4" class="empty">No hay médicos registrados.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <section class="card section-gap">
+    <div class="card-title"><h2>Consultas asignadas</h2></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Paciente</th><th>Motivo</th><th>Médico</th><th>Consultorio</th><th>Horario</th></tr></thead>
+      <tbody>
+        <tr th:each="c : ${consultas}">
+          <td th:text="${c.pacienteNombre}"></td><td th:text="${c.motivo}"></td><td th:text="${c.medico.nombre}"></td>
+          <td th:text="${c.consultorio}"></td><td th:text="${#temporals.format(c.inicio, 'dd/MM/yyyy HH:mm') + ' – ' + #temporals.format(c.fin, 'HH:mm')}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(consultas)}"><td colspan="5" class="empty">No hay consultas asignadas.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</main>
+</body>
+</html>

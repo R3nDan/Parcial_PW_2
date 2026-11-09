@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mis citas · Consultas médicas</title><link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body>
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark small">+</span> Consultas médicas</a><nav><a class="active" href="/paciente">Mis citas</a></nav><form th:action="@{/logout}" method="post"><button class="button ghost">Cerrar sesión</button></form></header>
+<main class="container">
+  <div class="heading"><div><p class="eyebrow">PORTAL DEL PACIENTE</p><h1>Tu agenda de salud</h1><p class="muted">Consulta tus citas y actualiza sus horarios.</p></div><span class="role-pill">PACIENTE</span></div>
+  <div class="alert success" th:if="${mensaje}" th:text="${mensaje}"></div><div class="alert error" th:if="${error}" th:text="${error}"></div>
+  <section class="appointment-grid">
+    <article class="appointment card" th:each="c : ${consultas}">
+      <div class="appointment-date"><span th:text="${#temporals.format(c.inicio, 'dd')}"></span><small th:text="${#temporals.format(c.inicio, 'MMM yyyy')}"></small></div>
+      <div class="appointment-info"><span class="status">CONFIRMADA</span><h2 th:text="${c.motivo}"></h2><p th:text="${c.medico.nombre} + ' · ' + c.medico.especialidad"></p><p><b>Consultorio:</b> <span th:text="${c.consultorio}"></span></p><p><b>Horario actual:</b> <span th:text="${#temporals.format(c.inicio, 'dd/MM/yyyy HH:mm') + ' – ' + #temporals.format(c.fin, 'HH:mm')}"></span></p>
+        <details class="schedule-edit"><summary>Actualizar horario</summary><form class="schedule-form" th:action="@{/paciente/consultas/{id}/horario(id=${c.id})}" method="post"><label>Inicio<input type="datetime-local" name="inicio" th:value="${#temporals.format(c.inicio, &quot;yyyy-MM-dd'T'HH:mm&quot;)}" required></label><label>Fin<input type="datetime-local" name="fin" th:value="${#temporals.format(c.fin, &quot;yyyy-MM-dd'T'HH:mm&quot;)}" required></label><button class="button primary" type="submit">Guardar horario</button></form></details>
+      </div>
+    </article>
+    <div class="card empty" th:if="${#lists.isEmpty(consultas)}">No tienes citas asignadas todavía.</div>
+  </section>
+</main></body></html>
